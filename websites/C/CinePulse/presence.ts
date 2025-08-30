@@ -1,7 +1,7 @@
 import { getTimestampsFromMedia } from 'premid'
 
 const presence = new Presence({
-  clientId: '1411027222445297736'
+  clientId: '1411027222445297736',
 })
 
 const assets = {
@@ -10,8 +10,10 @@ const assets = {
   pause: 'https://i.imgur.com/Kbkw0FO.png',
 }
 
-function formatTime(seconds: number): string {
-  if (!isFinite(seconds)) return '0:00'
+function _formatTime(seconds: number): string {
+  if (!Number.isFinite(seconds)) {
+    return '0:00'
+  }
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -20,45 +22,42 @@ function formatTime(seconds: number): string {
 function findPosterImage(): string {
   const possibleSelectors = [
     'img[src*="tmdb.org"]',
-    'img[data-src*="tmdb.org"]', 
+    'img[data-src*="tmdb.org"]',
     'img[style*="tmdb.org"]',
     '.poster img',
     '.movie-poster img',
     '.serie-poster img',
     '.backdrop img',
     '[class*="poster"] img',
-    '[class*="cover"] img'
+    '[class*="cover"] img',
   ]
-  
+
   for (const selector of possibleSelectors) {
     const elements = document.querySelectorAll(selector)
     for (const element of elements) {
       const img = element as HTMLImageElement
       let imageUrl = img.src || img.getAttribute('data-src') || ''
-      
+
       if (!imageUrl && img.style.backgroundImage) {
         const styleMatch = img.style.backgroundImage.match(/url\(['"]?([^'")]+)['"]?\)/)
         imageUrl = styleMatch?.[1] || ''
       }
-      
       if (imageUrl && imageUrl.includes('tmdb.org') && imageUrl.includes('/t/p/')) {
         const optimizedUrl = imageUrl
           .replace(/w1920_and_h800_multi_faces|w500|w780|w1280|original/g, 'w500')
           .replace(/h632|h948/g, 'h750')
-        
-        console.log('Poster trouvé:', optimizedUrl)
         return optimizedUrl
       }
     }
   }
-  
+
   return assets.logo
 }
 
 function parseMediaTitle(ariaLabel: string): {
-  title: string,
-  episodeInfo: string,
-  episodeTitle: string,
+  title: string
+  episodeInfo: string
+  episodeTitle: string
   isEpisode: boolean
 } {
   if (!ariaLabel) {
@@ -66,12 +65,12 @@ function parseMediaTitle(ariaLabel: string): {
       title: 'Contenu en cours',
       episodeInfo: '',
       episodeTitle: '',
-      isEpisode: false
+      isEpisode: false,
     }
   }
 
-  let cleanedLabel = ariaLabel
-    .replace(/^(Video Player|Player|Lecteur)(\s*[-–—]\s*)?/i, '')
+  const cleanedLabel = ariaLabel
+    .replace(/^(?:Video Player|Player|Lecteur)(?:\s*[-–—]\s*)?/i, '')
     .replace(/^\s*[-–—]+\s*/, '')
     .replace(/\s*[-–—]+\s*$/, '')
     .trim()
@@ -98,7 +97,8 @@ function parseMediaTitle(ariaLabel: string): {
         const season = match[1].padStart(2, '0')
         const episode = match[2].padStart(2, '0')
         episodeInfo = `S${season}E${episode}`
-      } else if (match[1]) {
+      }
+      else if (match[1]) {
         episodeInfo = `Ép. ${match[1]}`
       }
       break
@@ -131,20 +131,20 @@ function parseMediaTitle(ariaLabel: string): {
     title: mainTitle,
     episodeInfo,
     episodeTitle,
-    isEpisode
+    isEpisode,
   }
 }
 
-let browsingTimestamp = Math.floor(Date.now() / 1000)
+const browsingTimestamp = Math.floor(Date.now() / 1000)
 
 presence.on('UpdateData', async () => {
   const video = document.querySelector<HTMLVideoElement>('video')
   const player = document.getElementById('vds-media-player-root')
-  
+
   const showTimestamp = await presence.getSetting('showTimestamp')
-  const showPoster = await presence.getSetting('showPoster') 
+  const showPoster = await presence.getSetting('showPoster')
   const showEpisodeInfo = await presence.getSetting('showEpisodeInfo')
-  
+
   const presenceData: any = {
     type: 3,
     largeImageKey: assets.logo,
@@ -155,57 +155,66 @@ presence.on('UpdateData', async () => {
   if (player && video) {
     const ariaLabel = player.getAttribute('aria-label') ?? ''
     const mediaInfo = parseMediaTitle(ariaLabel)
-    
+
     if (showPoster) {
       const posterUrl = findPosterImage()
       presenceData.largeImageKey = posterUrl
       presenceData.largeImageText = mediaInfo.title
     }
-    
+
     presenceData.details = mediaInfo.title
 
     if (mediaInfo.isEpisode && showEpisodeInfo) {
       let stateText = ''
       if (mediaInfo.episodeInfo && mediaInfo.episodeTitle) {
         stateText = `${mediaInfo.episodeInfo} - ${mediaInfo.episodeTitle}`
-      } else if (mediaInfo.episodeInfo) {
+      }
+      else if (mediaInfo.episodeInfo) {
         stateText = mediaInfo.episodeInfo
-      } else if (mediaInfo.episodeTitle) {
+      }
+      else if (mediaInfo.episodeTitle) {
         stateText = mediaInfo.episodeTitle
-      } else {
+      }
+      else {
         stateText = video.paused ? 'En pause' : 'En cours de lecture'
       }
       presenceData.state = stateText
-    } else if (mediaInfo.isEpisode && !showEpisodeInfo) {
+    }
+    else if (mediaInfo.isEpisode && !showEpisodeInfo) {
       presenceData.state = video.paused ? 'Série en pause' : 'Regarder une série'
-    } else {
+    }
+    else {
       if (mediaInfo.episodeTitle) {
         presenceData.state = mediaInfo.episodeTitle
-      } else {
+      }
+      else {
         presenceData.state = video.paused ? 'Film en pause' : 'Regarder un film'
       }
     }
 
-    if (video && !isNaN(video.duration) && isFinite(video.duration)) {
+    if (video && !Number.isNaN(video.duration) && Number.isFinite(video.duration)) {
       if (!video.paused && showTimestamp) {
         const [startTs, endTs] = getTimestampsFromMedia(video)
         presenceData.startTimestamp = startTs
         presenceData.endTimestamp = endTs
         presenceData.smallImageKey = assets.play
         presenceData.smallImageText = 'En lecture'
-      } else if (!video.paused && !showTimestamp) {
+      }
+      else if (!video.paused && !showTimestamp) {
         delete presenceData.startTimestamp
         delete presenceData.endTimestamp
         presenceData.smallImageKey = assets.play
         presenceData.smallImageText = 'En lecture'
-      } else {
+      }
+      else {
         delete presenceData.startTimestamp
         delete presenceData.endTimestamp
         presenceData.smallImageKey = assets.pause
         presenceData.smallImageText = 'En pause'
       }
     }
-  } else {
+  }
+  else {
     presenceData.details = 'Navigation sur CinePulse.to'
     presenceData.state = 'Parcours du catalogue'
     delete presenceData.startTimestamp
