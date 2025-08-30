@@ -11,10 +11,12 @@
     "fr": "Regarder des films et séries sur CinePulse.to"
   },
   "url": "cinepulse.to",
+  "regExp": "([a-z0-9-]+\\.)*cinepulse\\.to[/]?",
   "version": "1.0.0",
   "logo": "https://i.imgur.com/jypMhJo.png",
-  "thumbnail" : "https://i.ibb.co/20Dw3tpK/cinepulse.webp",
+  "thumbnail": "https://i.ibb.co/20Dw3tpK/cinepulse.webp",
   "color": "#000000",
+  "category": "videos",
   "tags": [
     "video",
     "streaming",
@@ -22,9 +24,7 @@
     "tv-shows",
     "entertainment"
   ],
-  "category": "videos",
   "readLogs": false,
-  "regExp": "([a-z0-9-]+\\.)*cinepulse\\.to[/]?",
   "settings": [
     {
       "id": "showTimestamp",
