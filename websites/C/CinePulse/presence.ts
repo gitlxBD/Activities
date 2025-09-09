@@ -141,9 +141,11 @@ presence.on('UpdateData', async () => {
   const video = document.querySelector<HTMLVideoElement>('video')
   const player = document.getElementById('vds-media-player-root')
 
-  const showTimestamp = await presence.getSetting('showTimestamp')
-  const showPoster = await presence.getSetting('showPoster')
-  const showEpisodeInfo = await presence.getSetting('showEpisodeInfo')
+  const [showTimestamp, showPoster, showEpisodeInfo] = await Promise.all([
+    presence.getSetting('showTimestamp'),
+    presence.getSetting('showPoster'),
+    presence.getSetting('showEpisodeInfo')
+  ])
 
   const presenceData: any = {
     type: 3,
