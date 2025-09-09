@@ -144,7 +144,7 @@ presence.on('UpdateData', async () => {
   const [showTimestamp, showPoster, showEpisodeInfo] = await Promise.all([
     presence.getSetting('showTimestamp'),
     presence.getSetting('showPoster'),
-    presence.getSetting('showEpisodeInfo')
+    presence.getSetting('showEpisodeInfo'),
   ])
 
   const presenceData: any = {
